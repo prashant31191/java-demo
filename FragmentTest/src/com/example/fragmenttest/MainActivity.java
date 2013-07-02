@@ -1,5 +1,6 @@
 package com.example.fragmenttest;
 
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
@@ -12,8 +13,11 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.ActionBar.Tab;
+import android.content.Context;
 import android.content.Intent;
+import android.util.AttributeSet;
 import android.util.Log;
+import android.view.View;
 
 public class MainActivity extends Activity implements ActionBar.TabListener, FragmentCallbacks {
 	private static final String TAG = "MainActivity";
@@ -23,6 +27,14 @@ public class MainActivity extends Activity implements ActionBar.TabListener, Fra
 	};
 
 	public HashMap<TabType, Stack<String>> backStacks;
+
+    public static final class PreserveFragment extends Fragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            setRetainInstance(true);
+        }
+    }
 
 	/**
 	 * The serialization (saved instance state) Bundle key representing the
@@ -81,13 +93,21 @@ public class MainActivity extends Activity implements ActionBar.TabListener, Fra
 			backStacks.put(TabType.CART, new Stack<String>());
 			backStacks.put(TabType.PREFS, new Stack<String>());
 
-			mLastFragment = null;
+			//mLastFragment = null;
+            getFragmentManager().beginTransaction().add(new PreserveFragment(), "preserve").commit();
 		}
 
 		// Create tabs
 		actionBar.addTab(actionBar.newTab().setTag(TabType.PHOTOS).setIcon(R.drawable.tab_icon_photo).setTabListener(this));
 		actionBar.addTab(actionBar.newTab().setTag(TabType.CART).setIcon(R.drawable.tab_icon_cart).setTabListener(this));
 		actionBar.addTab(actionBar.newTab().setTag(TabType.PREFS).setIcon(R.drawable.tab_icon_config).setTabListener(this));
+	}
+
+	@Override
+	public View onCreateView(View parent, String name, Context context, AttributeSet attrs) {
+		View view = super.onCreateView(parent, name, context, attrs);
+		Log.d(TAG, "---- onCreateView name:" + name);
+		return view;
 	}
 
 	@Override
@@ -220,7 +240,7 @@ public class MainActivity extends Activity implements ActionBar.TabListener, Fra
 			addFragment(fragment, backStack, ft);
 		} else {
 			// Show topmost fragment
-			showFragment(backStack, ft);
+			//showFragment(backStack, ft);
 		}
 	}
 
@@ -299,10 +319,10 @@ public class MainActivity extends Activity implements ActionBar.TabListener, Fra
 
 		FragmentManager fm = getFragmentManager();
 		Log.d(TAG, "BackStackEntryCount: " + fm.getBackStackEntryCount());
-
+//		fm.dump("NPE will occur", null, new PrintWriter(new LogWriter(Log.ERROR, TAG, Log.LOG_ID_SYSTEM)), new String[]{});
 		// Peek topmost fragment from the stack
 		String tag = backStack.peek();
-		Fragment fragment = fm.findFragmentByTag(tag); // <== As Crash here!, NPE occurred!
+		Fragment fragment = fm.findFragmentByTag(tag); // <== crash here by NPE
 
 		// and attach it
 		ft.attach(fragment);
